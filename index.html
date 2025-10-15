@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Космический защитник</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* Главное меню */
+        #mainMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #0a0a2a, #1a1a4a);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .menu-title {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #00a8ff;
+            text-shadow: 0 0 10px #00a8ff, 0 0 20px #00a8ff;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #00a8ff, 0 0 20px #00a8ff; }
+            to { text-shadow: 0 0 15px #00a8ff, 0 0 30px #00a8ff, 0 0 40px #00a8ff; }
+        }
+        
+        .menu-button {
+            background: linear-gradient(to bottom, #4CAF50, #388E3C);
+            border: none;
+            color: white;
+            padding: 20px 40px;
+            margin: 10px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border-radius: 10px;
+            width: 250px;
+            text-align: center;
+            box-shadow: 0 6px 0 #2E7D32;
+            transition: all 0.2s;
+        }
+        
+        .menu-button:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #2E7D32;
+        }
+        
+        .menu-button.settings {
+            background: linear-gradient(to bottom, #2196F3, #1976D2);
+            box-shadow: 0 6px 0 #0D47A1;
+        }
+        
+        .menu-button.exit {
+            background: linear-gradient(to bottom, #f44336, #d32f2f);
+            box-shadow: 0 6px 0 #b71c1c;
+        }
+        
+        /* Меню настроек */
+        #settingsMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #1a1a3a, #2a2a5a);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .settings-title {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #4CAF50;
+        }
+        
+        .settings-option {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 10px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+        
+        .settings-button {
+            background: linear-gradient(to bottom, #FF9800, #F57C00);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 10px;
+            width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 0 #E65100;
+        }
+        
+        .settings-button:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #E65100;
+        }
+        
+        .toggle-button {
+            background: #666;
+            width: 60px;
+            height: 30px;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            display: inline-block;
+            margin: 0 10px;
+            vertical-align: middle;
+        }
+        
+        .toggle-button.active {
+            background: #4CAF50;
+        }
+        
+        .toggle-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .toggle-button.active .toggle-knob {
+            left: 33px;
+        }
+        
+        .volume-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        /* Игровой UI */
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            z-index: 10;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            display: none;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #00a8ff;
+            display: none;
+            z-index: 20;
+            width: 80%;
+            max-width: 400px;
+        }
+        
+        #gameOver h2 {
+            color: #ff6b6b;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+        
+        .game-button {
+            background: linear-gradient(to bottom, #4CAF50, #388E3C);
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 18px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 4px 0 #2E7D32;
+            transition: all 0.1s;
+        }
+        
+        .game-button:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #2E7D32;
+        }
+        
+        .game-button.menu {
+            background: linear-gradient(to bottom, #2196F3, #1976D2);
+            box-shadow: 0 4px 0 #0D47A1;
+        }
+        
+        /* Обновленные стили для управления */
+        #mobileControls {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: none;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 10;
+        }
+        
+        .vertical-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .horizontal-controls {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .controlButton {
+            width: 70px;
+            height: 70px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            color: white;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        
+        .controlButton:active {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+        
+        #difficultyIndicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #00a8ff;
+            font-size: 14px;
+            z-index: 10;
+            display: none;
+        }
+        
+        #level {
+            font-weight: bold;
+            color: #00a8ff;
+        }
+        
+        @media (max-width: 768px) {
+            #mobileControls {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Главное меню -->
+        <div id="mainMenu">
+            <h1 class="menu-title">КОСМИЧЕСКИЙ ЗАЩИТНИК</h1>
+            <button class="menu-button" id="startButton">СТАРТ</button>
+            <button class="menu-button settings" id="settingsButton">НАСТРОЙКИ</button>
+            <button class="menu-button exit" id="exitButton">ВЫХОД</button>
+        </div>
+        
+        <!-- Меню настроек -->
+        <div id="settingsMenu">
+            <h2 class="settings-title">НАСТРОЙКИ</h2>
+            
+            <div class="settings-option">
+                <span>Фоновая музыка:</span>
+                <div class="toggle-button" id="musicToggle">
+                    <div class="toggle-knob"></div>
+                </div>
+                <span id="musicStatusText">Выкл</span>
+            </div>
+            
+            <div class="settings-option">
+                <span>Громкость музыки:</span>
+                <input type="range" min="0" max="100" value="50" class="volume-slider" id="musicVolume">
+                <span id="volumeValue">50%</span>
+            </div>
+            
+            <div class="settings-option">
+                <span>Звуки игры:</span>
+                <div class="toggle-button" id="soundToggle">
+                    <div class="toggle-knob"></div>
+                </div>
+                <span id="soundStatusText">Выкл</span>
+            </div>
+            
+            <button class="settings-button" id="backButton">НАЗАД</button>
+        </div>
+        
+        <!-- Игровой UI -->
+        <div id="ui">
+            <div>Очки: <span id="score">0</span></div>
+            <div>Жизни: <span id="lives">3</span></div>
+        </div>
+        
+        <div id="difficultyIndicator">
+            Уровень: <span id="level">1</span>
+        </div>
+        
+        <!-- Обновленное управление -->
+        <div id="mobileControls">
+            <!-- Вертикальные стрелки слева -->
+            <div class="vertical-controls">
+                <div class="controlButton" id="upButton">↑</div>
+                <div class="controlButton" id="downButton">↓</div>
+            </div>
+            
+            <!-- Горизонтальные стрелки справа -->
+            <div class="horizontal-controls">
+                <div class="controlButton" id="leftButton">←</div>
+                <div class="controlButton" id="rightButton">→</div>
+            </div>
+        </div>
+        
+        <div id="gameOver">
+            <h2>Игра окончена!</h2>
+            <p>Ваш счет: <span id="finalScore">0</span></p>
+            <p>Достигнутый уровень: <span id="finalLevel">1</span></p>
+            <button class="game-button" id="restartButton">Играть снова</button>
+            <button class="game-button menu" id="menuButton">В главное меню</button>
+        </div>
+    </div>
+
+    <!-- Аудио элементы -->
+    <audio id="menuMusic" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-space-game-668.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="gameMusic" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-667.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="collisionSound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Основные переменные игры
+        let scene, camera, renderer;
+        let ship, asteroids = [];
+        let score = 0;
+        let lives = 3;
+        let gameActive = false;
+        let asteroidSpawnTimer = 0;
+        let keys = {};
+        let difficultyLevel = 1;
+        let gameTime = 0;
+        
+        // Настройки звука
+        let musicEnabled = false;
+        let soundEnabled = false;
+        let musicVolume = 0.5;
+        
+        // Настройки сложности
+        const DIFFICULTY_SETTINGS = {
+            1: { spawnRate: 90, asteroidSpeed: 0.03, maxAsteroids: 5 },
+            2: { spawnRate: 75, asteroidSpeed: 0.04, maxAsteroids: 7 },
+            3: { spawnRate: 60, asteroidSpeed: 0.05, maxAsteroids: 9 },
+            4: { spawnRate: 50, asteroidSpeed: 0.06, maxAsteroids: 11 },
+            5: { spawnRate: 40, asteroidSpeed: 0.07, maxAsteroids: 13 },
+            6: { spawnRate: 35, asteroidSpeed: 0.08, maxAsteroids: 15 },
+            7: { spawnRate: 30, asteroidSpeed: 0.09, maxAsteroids: 17 },
+            8: { spawnRate: 25, asteroidSpeed: 0.10, maxAsteroids: 19 },
+            9: { spawnRate: 20, asteroidSpeed: 0.11, maxAsteroids: 21 },
+            10: { spawnRate: 15, asteroidSpeed: 0.12, maxAsteroids: 23 }
+        };
+        
+        // Инициализация игры
+        function init() {
+            // Создание сцены
+            scene = new THREE.Scene();
+            
+            // Создание камеры
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 15;
+            
+            // Создание рендерера
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000033);
+            document.getElementById('gameContainer').appendChild(renderer.domElement);
+            
+            // Добавление освещения
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(0, 10, 5);
+            scene.add(directionalLight);
+            
+            // Инициализация аудио
+            initAudio();
+            
+            // Создание звездного фона
+            createStarField();
+            
+            // Создание корабля игрока
+            createShip();
+            
+            // Обработчики событий
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+                // Предотвращаем прокрутку страницы при использовании стрелок
+                if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            window.addEventListener('keyup', (e) => keys[e.key] = false);
+            
+            // Обработчики для мобильного управления
+            setupMobileControls();
+            
+            // Обработчики для меню
+            document.getElementById('startButton').addEventListener('click', startGame);
+            document.getElementById('settingsButton').addEventListener('click', showSettings);
+            document.getElementById('exitButton').addEventListener('click', exitGame);
+            document.getElementById('backButton').addEventListener('click', showMainMenu);
+            document.getElementById('restartButton').addEventListener('click', restartGame);
+            document.getElementById('menuButton').addEventListener('click', showMainMenu);
+            
+            // Обработчики для настроек звука
+            document.getElementById('musicToggle').addEventListener('click', toggleMusic);
+            document.getElementById('soundToggle').addEventListener('click', toggleSound);
+            document.getElementById('musicVolume').addEventListener('input', updateMusicVolume);
+            
+            // Начало игрового цикла
+            animate();
+        }
+        
+        // Инициализация аудио
+        function initAudio() {
+            const menuMusic = document.getElementById('menuMusic');
+            const gameMusic = document.getElementById('gameMusic');
+            const collisionSound = document.getElementById('collisionSound');
+            
+            // Устанавливаем начальную громкость
+            updateAudioVolume();
+        }
+        
+        // Обновление громкости аудио
+        function updateAudioVolume() {
+            const menuMusic = document.getElementById('menuMusic');
+            const gameMusic = document.getElementById('gameMusic');
+            const collisionSound = document.getElementById('collisionSound');
+            
+            menuMusic.volume = musicVolume;
+            gameMusic.volume = musicVolume;
+            collisionSound.volume = musicVolume;
+        }
+        
+        // Настройка мобильного управления
+        function setupMobileControls() {
+            const upButton = document.getElementById('upButton');
+            const downButton = document.getElementById('downButton');
+            const leftButton = document.getElementById('leftButton');
+            const rightButton = document.getElementById('rightButton');
+            
+            // Функции для обработки нажатий
+            function addButtonListeners(button, key) {
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    keys[key] = true;
+                });
+                
+                button.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    keys[key] = false;
+                });
+                
+                // Для поддержки мыши на планшетах
+                button.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    keys[key] = true;
+                });
+                
+                button.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    keys[key] = false;
+                });
+                
+                button.addEventListener('mouseleave', (e) => {
+                    e.preventDefault();
+                    keys[key] = false;
+                });
+            }
+            
+            addButtonListeners(upButton, 'ArrowUp');
+            addButtonListeners(downButton, 'ArrowDown');
+            addButtonListeners(leftButton, 'ArrowLeft');
+            addButtonListeners(rightButton, 'ArrowRight');
+        }
+        
+        // Создание звездного фона
+        function createStarField() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 2000;
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
+            
+            for (let i = 0; i < starCount * 3; i += 3) {
+                // Позиции
+                positions[i] = (Math.random() - 0.5) * 2000;
+                positions[i+1] = (Math.random() - 0.5) * 2000;
+                positions[i+2] = (Math.random() - 0.5) * 1000;
+                
+                // Цвета (от белого до голубого)
+                const colorVal = Math.random() * 0.5 + 0.5;
+                colors[i] = colorVal;
+                colors[i+1] = colorVal;
+                colors[i+2] = Math.random() * 0.2 + 0.8; // Голубой оттенок
+            }
+            
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const starMaterial = new THREE.PointsMaterial({
+                size: 2,
+                sizeAttenuation: true,
+                vertexColors: true
+            });
+            
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+        }
+        
+        // Создание улучшенной модели корабля
+        function createShip() {
+            const shipGroup = new THREE.Group();
+            
+                        // Корпус корабля (основная часть)
+            const hullGeometry = new THREE.ConeGeometry(0.8, 2, 8);
+            const hullMaterial = new THREE.MeshPhongMaterial({ color: 0x4CAF50 });
+            const hull = new THREE.Mesh(hullGeometry, hullMaterial);
+            hull.rotation.x = Math.PI;
+            shipGroup.add(hull);
+            
+            // Крылья
+            const wingGeometry = new THREE.BoxGeometry(2, 0.2, 1);
+            const wingMaterial = new THREE.MeshPhongMaterial({ color: 0x2E7D32 });
+            const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            leftWing.position.set(-1.2, 0, 0);
+            shipGroup.add(leftWing);
+            
+            const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            rightWing.position.set(1.2, 0, 0);
+            shipGroup.add(rightWing);
+            
+            // Двигатель
+            const engineGeometry = new THREE.CylinderGeometry(0.3, 0.5, 0.8, 8);
+            const engineMaterial = new THREE.MeshPhongMaterial({ color: 0xFF5722 });
+            const engine = new THREE.Mesh(engineGeometry, engineMaterial);
+            engine.position.set(0, -1.2, 0);
+            engine.rotation.x = Math.PI / 2;
+            shipGroup.add(engine);
+            
+            // Кабина
+            const cockpitGeometry = new THREE.SphereGeometry(0.4, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+            const cockpitMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x29B6F6,
+                transparent: true,
+                opacity: 0.7
+            });
+            const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+            cockpit.position.set(0, 0.3, 0.3);
+            shipGroup.add(cockpit);
+            
+            scene.add(shipGroup);
+            ship = shipGroup;
+        }
+        
+        // Создание улучшенного астероида
+        function createAsteroid() {
+            const asteroidGroup = new THREE.Group();
+            
+            // Основная часть астероида - иррегулярная форма
+            const mainGeometry = new THREE.DodecahedronGeometry(0.7, 0);
+            const mainMaterial = new THREE.MeshPhongMaterial({ color: 0x795548 });
+            const mainBody = new THREE.Mesh(mainGeometry, mainMaterial);
+            asteroidGroup.add(mainBody);
+            
+            // Добавляем несколько выступов для более естественного вида
+            for (let i = 0; i < 5; i++) {
+                const spikeGeometry = new THREE.ConeGeometry(0.2, 0.4, 5);
+                const spikeMaterial = new THREE.MeshPhongMaterial({ color: 0x5D4037 });
+                const spike = new THREE.Mesh(spikeGeometry, spikeMaterial);
+                
+                // Случайное позиционирование шипов на поверхности
+                const angle1 = Math.random() * Math.PI * 2;
+                const angle2 = Math.random() * Math.PI;
+                spike.position.set(
+                    Math.sin(angle2) * Math.cos(angle1) * 0.8,
+                    Math.sin(angle2) * Math.sin(angle1) * 0.8,
+                    Math.cos(angle2) * 0.8
+                );
+                
+                // Направляем шипы наружу от центра
+                spike.lookAt(0, 0, 0);
+                spike.rotateX(Math.PI);
+                
+                asteroidGroup.add(spike);
+            }
+            
+            // Случайная позиция за пределами экрана
+            asteroidGroup.position.x = (Math.random() - 0.5) * 20;
+            asteroidGroup.position.y = 12;
+            asteroidGroup.position.z = (Math.random() - 0.5) * 5;
+            
+            // Случайный масштаб
+            const scale = Math.random() * 0.5 + 0.7;
+            asteroidGroup.scale.set(scale, scale, scale);
+            
+            // Случайная скорость вращения
+            asteroidGroup.userData = {
+                rotationSpeed: {
+                    x: (Math.random() - 0.5) * 0.02,
+                    y: (Math.random() - 0.5) * 0.02,
+                    z: (Math.random() - 0.5) * 0.02
+                },
+                speed: Math.random() * 0.03 + DIFFICULTY_SETTINGS[difficultyLevel].asteroidSpeed
+            };
+            
+            scene.add(asteroidGroup);
+            asteroids.push(asteroidGroup);
+        }
+        
+        // Обновление уровня сложности
+        function updateDifficulty() {
+            // Увеличиваем уровень каждые 30 секунд
+            const newLevel = Math.min(10, Math.floor(gameTime / 30) + 1);
+            
+            if (newLevel !== difficultyLevel) {
+                difficultyLevel = newLevel;
+                document.getElementById('level').textContent = difficultyLevel;
+                
+                // Визуальный эффект смены уровня
+                const indicator = document.getElementById('difficultyIndicator');
+                indicator.style.backgroundColor = '#ff9800';
+                setTimeout(() => {
+                    indicator.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                }, 500);
+            }
+        }
+        
+        // Обновление игры
+        function update() {
+            if (!gameActive) return;
+            
+            // Увеличиваем время игры
+            gameTime += 1/60; // Предполагаем 60 FPS
+            
+            // Обновляем сложность
+            updateDifficulty();
+            
+            // Управление кораблем
+            const moveSpeed = 0.15;
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                ship.position.x -= moveSpeed;
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                ship.position.x += moveSpeed;
+            }
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+                ship.position.y += moveSpeed;
+            }
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+                ship.position.y -= moveSpeed;
+            }
+            
+            // Ограничение движения корабля
+            ship.position.x = Math.max(-9, Math.min(9, ship.position.x));
+            ship.position.y = Math.max(-6, Math.min(6, ship.position.y));
+            
+            // Создание новых астероидов
+            asteroidSpawnTimer++;
+            const currentSettings = DIFFICULTY_SETTINGS[difficultyLevel];
+            if (asteroidSpawnTimer > currentSettings.spawnRate && asteroids.length < currentSettings.maxAsteroids) {
+                createAsteroid();
+                asteroidSpawnTimer = 0;
+            }
+            
+            // Обновление астероидов
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                
+                // Вращение астероида
+                asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
+                asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
+                asteroid.rotation.z += asteroid.userData.rotationSpeed.z;
+                
+                // Движение астероида вниз
+                asteroid.position.y -= asteroid.userData.speed;
+                
+                // Проверка столкновения с кораблем
+                const distance = ship.position.distanceTo(asteroid.position);
+                if (distance < 1.8) {
+                    // Столкновение
+                    lives--;
+                    document.getElementById('lives').textContent = lives;
+                    
+                    // Визуальный эффект столкновения
+                    ship.scale.set(1.3, 1.3, 1.3);
+                    setTimeout(() => {
+                        if (ship) ship.scale.set(1, 1, 1);
+                    }, 100);
+                    
+                    // Воспроизведение звука столкновения
+                    if (soundEnabled) {
+                        const collisionSound = document.getElementById('collisionSound');
+                        collisionSound.currentTime = 0;
+                        collisionSound.play();
+                    }
+                    
+                    // Удаление астероида
+                    scene.remove(asteroid);
+                    asteroids.splice(i, 1);
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    }
+                }
+                
+                // Удаление астероидов, улетевших за экран
+                if (asteroid.position.y < -12) {
+                    scene.remove(asteroid);
+                    asteroids.splice(i, 1);
+                    
+                    // Добавление очков за пролетевший астероид
+                    score += 10 * difficultyLevel;
+                    document.getElementById('score').textContent = score;
+                }
+            }
+        }
+        
+        // Игровой цикл
+        function animate() {
+            requestAnimationFrame(animate);
+            update();
+            renderer.render(scene, camera);
+        }
+        
+        // Обработка изменения размера окна
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Функции меню
+        function startGame() {
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('difficultyIndicator').style.display = 'block';
+            document.getElementById('mobileControls').style.display = 'flex';
+            gameActive = true;
+            
+            // Переключаем музыку
+            if (musicEnabled) {
+                const menuMusic = document.getElementById('menuMusic');
+                const gameMusic = document.getElementById('gameMusic');
+                menuMusic.pause();
+                gameMusic.currentTime = 0;
+                gameMusic.play();
+            }
+        }
+        
+        function showSettings() {
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('settingsMenu').style.display = 'flex';
+        }
+        
+        function showMainMenu() {
+            document.getElementById('mainMenu').style.display = 'flex';
+            document.getElementById('settingsMenu').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('ui').style.display = 'none';
+            document.getElementById('difficultyIndicator').style.display = 'none';
+            document.getElementById('mobileControls').style.display = 'none';
+            
+            // Переключаем музыку
+            if (musicEnabled) {
+                const menuMusic = document.getElementById('menuMusic');
+                const gameMusic = document.getElementById('gameMusic');
+                gameMusic.pause();
+                menuMusic.currentTime = 0;
+                menuMusic.play();
+            }
+            
+            // Сбрасываем игру
+            restartGame();
+            gameActive = false;
+        }
+        
+        function exitGame() {
+            // В реальном приложении здесь можно закрыть окно или приложение
+            alert('Спасибо за игру!');
+        }
+        
+        // Функции настроек звука
+        function toggleMusic() {
+            const toggle = document.getElementById('musicToggle');
+            const text = document.getElementById('musicStatusText');
+            const menuMusic = document.getElementById('menuMusic');
+            const gameMusic = document.getElementById('gameMusic');
+            
+            musicEnabled = !musicEnabled;
+            
+            if (musicEnabled) {
+                toggle.classList.add('active');
+                text.textContent = 'Вкл';
+                
+                // Включаем соответствующую музыку
+                if (document.getElementById('mainMenu').style.display !== 'none') {
+                    menuMusic.currentTime = 0;
+                    menuMusic.play();
+                } else if (gameActive) {
+                    gameMusic.currentTime = 0;
+                    gameMusic.play();
+                }
+            } else {
+                toggle.classList.remove('active');
+                text.textContent = 'Выкл';
+                
+                // Выключаем всю музыку
+                menuMusic.pause();
+                gameMusic.pause();
+            }
+        }
+        
+        function toggleSound() {
+            const toggle = document.getElementById('soundToggle');
+            const text = document.getElementById('soundStatusText');
+            
+            soundEnabled = !soundEnabled;
+            
+            if (soundEnabled) {
+                toggle.classList.add('active');
+                text.textContent = 'Вкл';
+            } else {
+                toggle.classList.remove('active');
+                text.textContent = 'Выкл';
+            }
+        }
+        
+        function updateMusicVolume() {
+            const slider = document.getElementById('musicVolume');
+            const volumeValue = document.getElementById('volumeValue');
+            
+            musicVolume = slider.value / 100;
+            volumeValue.textContent = slider.value + '%';
+            
+            updateAudioVolume();
+        }
+        
+        // Конец игры
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalLevel').textContent = difficultyLevel;
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('mobileControls').style.display = 'none';
+            
+            // Останавливаем игровую музыку
+            if (musicEnabled) {
+                const gameMusic = document.getElementById('gameMusic');
+                gameMusic.pause();
+            }
+        }
+        
+        // Перезапуск игры
+        function restartGame() {
+            // Сброс переменных
+            score = 0;
+            lives = 3;
+            asteroidSpawnTimer = 0;
+            difficultyLevel = 1;
+            gameTime = 0;
+            
+            // Обновление UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('level').textContent = difficultyLevel;
+            document.getElementById('gameOver').style.display = 'none';
+            
+            // Удаление всех астероидов
+            for (let asteroid of asteroids) {
+                scene.remove(asteroid);
+            }
+            asteroids = [];
+            
+            // Сброс позиции корабля
+            if (ship) {
+                ship.position.set(0, 0, 0);
+                ship.rotation.set(0, 0, 0);
+            }
+            
+            // Запуск игры
+            gameActive = true;
+            
+            // Показываем элементы управления
+            document.getElementById('mobileControls').style.display = 'flex';
+            
+            // Запускаем игровую музыку
+            if (musicEnabled) {
+                const gameMusic = document.getElementById('gameMusic');
+                gameMusic.currentTime = 0;
+                gameMusic.play();
+            }
+        }
+        
+        // Запуск игры при загрузке страницы
+        window.onload = function() {
+            init();
+            // Не начинаем игру сразу, показываем меню
+            gameActive = false;
+        };
+    </script>
+</body>
+</html>
