@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крестики-Нолики онлайн</title>
+    <style>
+        /* ОСНОВНЫЕ СТИЛИ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+
+        /* ЛОББИ */
+        #lobby {
+            text-align: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .join-section {
+            margin: 30px 0;
+        }
+
+        .join-section input {
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            width: 300px;
+            max-width: 80%;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        /* ИГРОВАЯ КОМНАТА */
+        #gameRoom {
+            display: none;
+        }
+
+        #gameRoom.active {
+            display: block;
+        }
+
+        .room-info {
+            background: #eef2ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .game-link-box {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            word-break: break-all;
+        }
+
+        .game-link-box a {
+            color: #2196F3;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        .game-link-box a:hover {
+            text-decoration: underline;
+        }
+
+        .status {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        /* ИГРОВОЕ ПОЛЕ */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            font-size: 60px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cell:hover {
+            background: #f5f5f5;
+            transform: scale(1.05);
+        }
+
+        .cell.x {
+            color: #f44336;
+            border-color: #f44336;
+        }
+
+        .cell.o {
+            color: #2196F3;
+            border-color: #2196F3;
+        }
+
+        /* ИНФОРМАЦИЯ ОБ ИГРЕ */
+        .game-info {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .symbol {
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .symbol-x {
+            color: #f44336;
+        }
+
+        .symbol-o {
+            color: #2196F3;
+        }
+
+        /* УВЕДОМЛЕНИЯ */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ФУТЕР */
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Крестики-Нолики онлайн</h1>
+        <p class="subtitle">Играйте с друзьями в реальном времени</p>
+
+        <!-- ЛОББИ -->
+        <div id="lobby">
+            <button id="createRoomBtn" class="btn btn-primary">
+                🏠 Создать комнату
+            </button>
+            
+            <div class="join-section">
+                <p style="margin: 20px 0; font-size: 18px; color: #555;">или</p>
+                <input type="text" id="roomIdInput" placeholder="Введите ID комнаты">
+                <button id="joinRoomBtn" class="btn btn-secondary">
+                    🔗 Присоединиться
+                </button>
+            </div>
+
+            <div class="instructions">
+                <h3>🎯 Как играть:</h3>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                    <li>Нажмите "Создать комнату"</li>
+                    <li>Ссылка появится на странице и в консоли сервера</li>
+                    <li>Отправьте ссылку другу или откройте в другом окне браузера</li>
+                    <li>Игрок "X" ходит первым</li>
+                    <li>Соедините 3 символа в ряд для победы</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- ИГРОВАЯ КОМНАТА -->
+        <div id="gameRoom">
+            <div class="room-info">
+                <h2 style="color: #444;">Комната: <span id="roomIdDisplay">-</span></h2>
+                
+                <div class="game-link-box" id="gameLinkBox" style="display: none;">
+                    <p style="margin-bottom: 10px; font-weight: bold;">🔗 Ссылка для друга:</p>
+                    <a href="#" id="gameLink" target="_blank"></a>
+                    <button id="copyLinkBtn" style="margin-top: 10px; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        📋 Копировать ссылку
+                    </button>
+                </div>
+
+                <div class="status" id="gameStatus">Ожидание игрока...</div>
+                
+                <p style="font-size: 18px;">
+                    Ваш символ: <span id="playerSymbol" class="symbol symbol-x">X</span>
+                </p>
+            </div>
+
+            <!-- ИГРОВОЕ ПОЛЕ -->
+            <div class="game-board" id="gameBoard">
+                <!-- Ячейки будут созданы через JavaScript -->
+            </div>
+
+            <!-- ИНФОРМАЦИЯ ОБ ИГРЕ -->
+            <div class="game-info">
+                <p style="font-size: 20px; margin-bottom: 15px;">
+                    Сейчас ходит: <span id="currentPlayer" class="symbol symbol-x">X</span>
+                </p>
+                
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="restartBtn" class="btn" style="background: #ff9800; color: white;">
+                        🔄 Новая игра
+                    </button>
+                    <button id="leaveRoomBtn" class="btn" style="background: #f44336; color: white;">
+                        🚪 Покинуть комнату
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Ссылка на игру появится здесь и в консоли сервера при создании комнаты</p>
+        </footer>
+    </div>
+
+    <!-- УВЕДОМЛЕНИЯ -->
+    <div class="notification" id="notification"></div>
+
+    <!-- Подключение Socket.io -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <script>
+        class TicTacToeGame {
+            constructor() {
+                this.socket = io('http://localhost:3000');
+                this.playerSymbol = null;
+                this.roomId = null;
+                this.isMyTurn = false;
+                this.gameLink = null;
+                
+                this.initElements();
+                this.initEventListeners();
+                this.initSocketEvents();
+                this.checkUrlForRoom();
+                
+                console.log('Игра загружена!');
+            }
+
+            initElements() {
+                // Элементы интерфейса
+                this.lobby = document.getElementById('lobby');
+                this.gameRoom = document.getElementById('gameRoom');
+                this.gameBoard = document.getElementById('gameBoard');
+                this.notification = document.getElementById('notification');
+                
+                // Кнопки
+                this.createRoomBtn = document.getElementById('createRoomBtn');
+                this.joinRoomBtn = document.getElementById('joinRoomBtn');
+                this.restartBtn = document.getElementById('restartBtn');
+                this.leaveRoomBtn = document.getElementById('leaveRoomBtn');
+                this.copyLinkBtn = document.getElementById('copyLinkBtn');
+                
+                // Поля ввода
+                this.roomIdInput = document.getElementById('roomIdInput');
+                
+                // Информационные элементы
+                this.roomIdDisplay = document.getElementById('roomIdDisplay');
+                this.gameStatus = document.getElementById('gameStatus');
+                this.playerSymbolDisplay = document.getElementById('playerSymbol');
+                this.currentPlayerDisplay = document.getElementById('currentPlayer');
+                this.gameLinkElement = document.getElementById('gameLink');
+                this.gameLinkBox = document.getElementById('gameLinkBox');
+                
+                // Создаем игровое поле
+                this.createBoard();
+            }
+
+            createBoard() {
+                this.gameBoard.innerHTML = '';
+                for (let i = 0; i < 9; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.index = i;
+                    cell.addEventListener('click', () => this.makeMove(i));
+                    this.gameBoard.appendChild(cell);
+                }
+            }
+
+            initEventListeners() {
+                // Создание комнаты
+                this.createRoomBtn.addEventListener('click', () => {
+                    this.socket.emit('createRoom');
+                    this.showNotification('Создание комнаты...');
+                });
+
+                // Присоединение к комнате
+                this.joinRoomBtn.addEventListener('click', () => {
+                    const roomId = this.roomIdInput.value.trim().toUpperCase();
+                    if (roomId) {
+                        this.socket.emit('joinRoom', roomId);
+                        this.showNotification(`Присоединение к комнате ${roomId}...`);
+                    }
+                });
+
+                // Перезапуск игры
+                this.restartBtn.addEventListener('click', () => {
+                    if (this.roomId) {
+                        this.socket.emit('restartGame', this.roomId);
+                    }
+                });
+
+                // Выход из комнаты
+                this.leaveRoomBtn.addEventListener('click', () => {
+                    this.leaveRoom();
+                });
+
+                // Копирование ссылки
+                this.copyLinkBtn.addEventListener('click', () => {
+                    this.copyGameLink();
+                });
+            }
+
+            initSocketEvents() {
+                // Подключение к серверу
+                this.socket.on('connect', () => {
+                    console.log('✅ Подключен к серверу');
+                });
+
+                // Создание комнаты
+                this.socket.on('roomCreated', (data) => {
+                    this.roomId = data.roomId;
+                    this.gameLink = data.gameLink;
+                    
+                    this.showGameRoom();
+                    this.roomIdDisplay.textContent = data.roomId;
+                    
+                    // Показываем ссылку
+                    this.gameLinkElement.href = data.gameLink;
+                    this.gameLinkElement.textContent = data.gameLink;
+                    this.gameLinkBox.style.display = 'block';
+                    
+                    this.showNotification('Комната создана! Скопируйте ссылку для друга');
+                    
+                    // Также выводим в консоль браузера
+                    console.log('🎮 Ссылка для игры:', data.gameLink);
+                });
+
+                // Присоединение к комнате
+                this.socket.on('roomJoined', (data) => {
+                    this.roomId = data.roomId;
+                    this.gameLink = `http://localhost:3000/?room=${data.roomId}`;
+                    
+                    this.showGameRoom();
+                    this.roomIdDisplay.textContent = data.roomId;
+                    
+                    // Показываем ссылку
+                    this.gameLinkElement.href = this.gameLink;
+                    this.gameLinkElement.textContent = this.gameLink;
+                    this.gameLinkBox.style.display = 'block';
+                    
+                    this.showNotification(`Вы в комнате ${data.roomId}`);
+                });
+
+                // Назначение символа
+                this.socket.on('assignSymbol', (symbol) => {
+                    this.playerSymbol = symbol;
+                    this.playerSymbolDisplay.textContent = symbol;
+                    this.playerSymbolDisplay.className = `symbol symbol-${symbol.toLowerCase()}`;
+                });
+
+                // Начало игры
+                this.socket.on('gameStart', (data) => {
+                    this.gameStatus.textContent = 'Игра началась!';
+                    this.updateBoard(data.board);
+                    this.updateCurrentPlayer(data.currentPlayer);
+                });
+
+                // Обновление игры
+                this.socket.on('updateGame', (data) => {
+                    this.updateBoard(data.board);
+                    this.updateCurrentPlayer(data.currentPlayer);
+                });
+
+                // Конец игры
+                this.socket.on('gameOver', (data) => {
+                    if (data.winner === 'draw') {
+                        this.gameStatus.textContent = 'Ничья!';
+                        this.showNotification('Ничья!');
+                    } else {
+                        this.gameStatus.textContent = `Победитель: ${data.winner}`;
+                        this.showNotification(`Победитель: ${data.winner}!`);
+                    }
+                    this.updateBoard(data.board);
+                });
+
+                // Перезапуск
+                this.socket.on('gameRestart', (data) => {
+                    this.updateBoard(data.board);
+                    this.updateCurrentPlayer(data.currentPlayer);
+                    this.gameStatus.textContent = 'Игра началась!';
+                });
+
+                // Ошибки
+                this.socket.on('error', (data) => {
+                    this.showNotification(data.message);
+                });
+            }
+
+            checkUrlForRoom() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const roomId = urlParams.get('room');
+                
+                if (roomId) {
+                    this.roomIdInput.value = roomId;
+                    this.showNotification(`Найдена комната: ${roomId}. Нажмите "Присоединиться"`);
+                }
+            }
+
+            copyGameLink() {
+                if (this.gameLink) {
+                    navigator.clipboard.writeText(this.gameLink).then(() => {
+                        this.showNotification('Ссылка скопирована!');
+                    }).catch(() => {
+                        // Резервный метод для старых браузеров
+                        const textArea = document.createElement('textarea');
+                        textArea.value = this.gameLink;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        this.showNotification('Ссылка скопирована!');
+                    });
+                }
+            }
+
+            makeMove(cellIndex) {
+                if (!this.isMyTurn || !this.playerSymbol || !this.roomId) return;
+                
+                const cell = document.querySelector(`.cell[data-index="${cellIndex}"]`);
+                if (cell.textContent !== '') return;
+                
+                this.socket.emit('makeMove', {
+                    roomId: this.roomId,
+                    cellIndex: cellIndex,
+                    symbol: this.playerSymbol
+                });
+            }
+
+            updateBoard(board) {
+                const cells = document.querySelectorAll('.cell');
+                cells.forEach((cell, index) => {
+                    cell.textContent = board[index] || '';
+                    cell.className = 'cell';
+                    if (board[index] === 'X') {
+                        cell.classList.add('x');
+                    } else if (board[index] === 'O') {
+                        cell.classList.add('o');
+                    }
+                });
+            }
+
+            updateCurrentPlayer(currentPlayer) {
+                this.currentPlayerDisplay.textContent = currentPlayer;
+                this.currentPlayerDisplay.className = `symbol symbol-${currentPlayer.toLowerCase()}`;
+                this.isMyTurn = currentPlayer === this.playerSymbol;
+                
+                if (this.isMyTurn) {
+                    this.gameStatus.textContent = 'Ваш ход!';
+                } else {
+                    this.gameStatus.textContent = 'Ход противника...';
+                }
+            }
+
+            showGameRoom() {
+                this.lobby.style.display = 'none';
+                this.gameRoom.classList.add('active');
+            }
+
+            leaveRoom() {
+                this.lobby.style.display = 'block';
+                this.gameRoom.classList.remove('active');
+                
+                this.playerSymbol = null;
+                this.roomId = null;
+                this.isMyTurn = false;
+                this.gameLink = null;
+                
+                this.roomIdInput.value = '';
+                this.gameLinkBox.style.display = 'none';
+                this.createBoard();
+                
+                this.showNotification('Вы вышли из комнаты');
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = this.notification;
+                notification.textContent = message;
+                
+                // Цвета для разных типов уведомлений
+                if (type === 'error') {
+                    notification.style.background = '#f44336';
+                } else if (type === 'success') {
+                    notification.style.background = '#4CAF50';
+                } else if (type === 'warning') {
+                    notification.style.background = '#ff9800';
+                } else {
+                    notification.style.background = '#2196F3';
+                }
+                
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // Запуск игры
+        document.addEventListener('DOMContentLoaded', () => {
+            window.game = new TicTacToeGame();
+        });
+    </script>
+</body>
+</html>
